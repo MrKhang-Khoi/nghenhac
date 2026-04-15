@@ -36,12 +36,24 @@ def check_dependencies():
 
 
 # Bảng chuyển đổi tiếng Việt → ASCII
-_VIET_MAP = str.maketrans(
-    'àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ'
-    'ÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴĐ',
-    'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd'
-    'AAAAAAAAAAAAAAAAAEEEEEEEEEEEIIIIIOOOOOOOOOOOOOOOOOOUUUUUUUUUUUYYYYYD'
+_VIET_PAIRS = (
+    ('àáảãạ', 'a'), ('ăắằẳẵặ', 'a'), ('âấầẩẫậ', 'a'),
+    ('èéẻẽẹ', 'e'), ('êếềểễệ', 'e'),
+    ('ìíỉĩị', 'i'),
+    ('òóỏõọ', 'o'), ('ôốồổỗộ', 'o'), ('ơớờởỡợ', 'o'),
+    ('ùúủũụ', 'u'), ('ưứừửữự', 'u'),
+    ('ỳýỷỹỵ', 'y'), ('đ', 'd'),
+    ('ÀÁẢÃẠ', 'A'), ('ĂẮẰẲẴẶ', 'A'), ('ÂẤẦẨẪẬ', 'A'),
+    ('ÈÉẺẼẸ', 'E'), ('ÊẾỀỂỄỆ', 'E'),
+    ('ÌÍỈĨỊ', 'I'),
+    ('ÒÓỎÕỌ', 'O'), ('ÔỐỒỔỖỘ', 'O'), ('ƠỚỜỞỠỢ', 'O'),
+    ('ÙÚỦŨỤ', 'U'), ('ƯỨỪỬỮỰ', 'U'),
+    ('ỲÝỶỸỴ', 'Y'), ('Đ', 'D'),
 )
+_VIET_MAP = {}
+for chars, replacement in _VIET_PAIRS:
+    for c in chars:
+        _VIET_MAP[ord(c)] = replacement
 
 
 def sanitize_filename(text):
