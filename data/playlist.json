@@ -42,5 +42,16 @@
     "duration": 379,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "anh_là_người_có_lỗi_-_lâm_vũ",
+    "title": "ANH LÀ NGƯỜI CÓ LỖI  -  Lâm Vũ",
+    "artist": "Vafaco Official",
+    "album": "",
+    "cover": "assets/covers/ANH_LÀ_NGƯỜI_CÓ_LỖI_-_Lâm_Vũ.jpg",
+    "audioUrl": "assets/audio/ANH_LÀ_NGƯỜI_CÓ_LỖI_-_Lâm_Vũ.mp3",
+    "duration": 286,
+    "lyrics": "",
+    "favorite": false
   }
 ]
