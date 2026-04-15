@@ -31,5 +31,16 @@
     "duration": 0,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "như_đã_dấu_yêu_-_phú_quí_(official_mv)_bản_tình_ca_hay_nhất_mọi_thời_đại",
+    "title": "Như Đã Dấu Yêu - Phú Quí (Official MV) || Bản Tình Ca Hay Nhất Mọi Thời Đại",
+    "artist": "Phú Quí Official",
+    "album": "",
+    "cover": "assets/covers/Như_Đã_Dấu_Yêu_-_Phú_Quí_(Official_MV)_Bản_Tình_Ca_Hay_Nhất_Mọi_Thời_Đại.jpg",
+    "audioUrl": "assets/audio/Như_Đã_Dấu_Yêu_-_Phú_Quí_(Official_MV)_Bản_Tình_Ca_Hay_Nhất_Mọi_Thời_Đại.mp3",
+    "duration": 287,
+    "lyrics": "",
+    "favorite": false
   }
 ]
