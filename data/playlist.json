@@ -108,5 +108,16 @@
     "duration": 294,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "dung_nhu_thoi_quen_jaykii_ft_sara_luu",
+    "title": "ĐỪNG NHƯ THÓI QUEN | JayKii FT Sara Lưu",
+    "artist": "SARA LUU ENTERTAINMENT",
+    "album": "",
+    "cover": "assets/covers/default-cover.jpg",
+    "audioUrl": "assets/audio/DUNG_NHU_THOI_QUEN_JayKii_FT_Sara_Luu.mp3",
+    "duration": 266,
+    "lyrics": "",
+    "favorite": false
   }
 ]
