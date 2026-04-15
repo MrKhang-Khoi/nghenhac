@@ -20,5 +20,16 @@
     "duration": 361,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "đường_tím_bằng_lăng_-_thiên_quang_ft_quỳnh_trang",
+    "title": "Đường Tím Bằng Lăng - Thiên Quang ft Quỳnh Trang",
+    "artist": "Bolero Ngôi Sao Trẻ",
+    "album": "",
+    "cover": "assets/covers/Đường_Tím_Bằng_Lăng_-_Thiên_Quang_ft_Quỳnh_Trang.jpg",
+    "audioUrl": "assets/audio/Đường_Tím_Bằng_Lăng_-_Thiên_Quang_ft_Quỳnh_Trang.mp3",
+    "duration": 331,
+    "lyrics": "",
+    "favorite": false
   }
 ]
