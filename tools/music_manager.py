@@ -35,7 +35,8 @@ from downloader import (
 )
 from github_uploader import (
     check_git_installed, check_repo_status, update_playlist_json,
-    git_add_commit_push, get_repo_size, git_pull
+    git_add_commit_push, get_repo_size, git_pull,
+    remove_song_from_playlist, git_remove_and_push
 )
 
 
@@ -130,6 +131,12 @@ class MusicManagerApp(ctk.CTk):
             fg_color="transparent", hover_color="#2a2a3e",
             command=self._open_settings
         ).pack(side="right", padx=8)
+
+        ctk.CTkButton(
+            header, text="📋 Quản lý", width=90, height=32,
+            fg_color="transparent", hover_color="#2a2a3e",
+            command=self._open_song_manager
+        ).pack(side="right", padx=0)
 
         # ===== INPUT SECTION =====
         input_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -544,6 +551,234 @@ class MusicManagerApp(ctk.CTk):
             text_color="#0d0d0f", font=ctk.CTkFont(size=14, weight="bold"),
             command=save_settings
         ).pack(fill="x", pady=(8, 0))
+
+    def _open_song_manager(self):
+        """Mở cửa sổ quản lý bài hát."""
+        mgr = ctk.CTkToplevel(self)
+        mgr.title("📋 Quản lý bài hát")
+        mgr.geometry("650x520")
+        mgr.transient(self)
+        mgr.grab_set()
+        mgr.configure(fg_color=self.BG_DARK)
+
+        # Header
+        hdr = ctk.CTkFrame(mgr, fg_color=self.BG_CARD, corner_radius=0, height=44)
+        hdr.pack(fill="x")
+        hdr.pack_propagate(False)
+        ctk.CTkLabel(
+            hdr, text="📋 Quản lý bài hát trên GitHub",
+            font=ctk.CTkFont(size=14, weight="bold"), text_color=self.GOLD
+        ).pack(side="left", padx=16)
+
+        refresh_btn = ctk.CTkButton(
+            hdr, text="🔄 Làm mới", width=80, height=28,
+            fg_color="transparent", hover_color="#2a2a3e",
+            command=lambda: self._load_songs_into_manager(scroll_frame, mgr)
+        )
+        refresh_btn.pack(side="right", padx=8)
+
+        # Scrollable frame
+        scroll_frame = ctk.CTkScrollableFrame(
+            mgr, fg_color="transparent",
+            scrollbar_button_color="#333",
+            scrollbar_button_hover_color="#555"
+        )
+        scroll_frame.pack(fill="both", expand=True, padx=12, pady=8)
+
+        self._load_songs_into_manager(scroll_frame, mgr)
+
+    def _load_songs_into_manager(self, scroll_frame, mgr_window):
+        """Load danh sách bài hát vào cửa sổ quản lý."""
+        # Xóa nội dung cũ
+        for widget in scroll_frame.winfo_children():
+            widget.destroy()
+
+        # Đọc playlist.json
+        config = self.config
+        playlist_path = os.path.join(config['repo_path'], config['playlist_file'])
+
+        if not os.path.exists(playlist_path):
+            ctk.CTkLabel(
+                scroll_frame, text="❌ Không tìm thấy playlist.json",
+                text_color="#f87171"
+            ).pack(pady=20)
+            return
+
+        try:
+            with open(playlist_path, 'r', encoding='utf-8') as f:
+                playlist = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            ctk.CTkLabel(
+                scroll_frame, text="❌ Lỗi đọc playlist.json",
+                text_color="#f87171"
+            ).pack(pady=20)
+            return
+
+        if not playlist:
+            ctk.CTkLabel(
+                scroll_frame, text="📭 Chưa có bài hát nào",
+                text_color="#8a8a9a", font=ctk.CTkFont(size=13)
+            ).pack(pady=20)
+            return
+
+        # Header row
+        ctk.CTkLabel(
+            scroll_frame,
+            text=f"🎵 {len(playlist)} bài hát",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#8a8a9a"
+        ).pack(anchor="w", pady=(0, 6))
+
+        # Tạo card cho mỗi bài
+        for i, song in enumerate(playlist):
+            self._create_song_card(scroll_frame, song, i, mgr_window)
+
+    def _create_song_card(self, parent, song, index, mgr_window):
+        """Tạo 1 card bài hát trong cửa sổ quản lý."""
+        config = self.config
+        repo_path = config['repo_path']
+
+        card = ctk.CTkFrame(parent, fg_color=self.BG_CARD, corner_radius=10, height=60)
+        card.pack(fill="x", pady=3)
+        card.pack_propagate(False)
+
+        inner = ctk.CTkFrame(card, fg_color="transparent")
+        inner.pack(fill="both", expand=True, padx=12, pady=8)
+
+        # Số thứ tự
+        ctk.CTkLabel(
+            inner, text=f"{index + 1}.",
+            font=ctk.CTkFont(size=12), text_color="#55556a", width=24
+        ).pack(side="left")
+
+        # Thông tin bài hát
+        info_frame = ctk.CTkFrame(inner, fg_color="transparent")
+        info_frame.pack(side="left", fill="x", expand=True, padx=(4, 8))
+
+        title = song.get('title', 'Không rõ')
+        artist = song.get('artist', '')
+        duration = song.get('duration', 0)
+        dur_str = f"{int(duration // 60)}:{int(duration % 60):02d}" if duration else "—"
+
+        ctk.CTkLabel(
+            info_frame, text=title,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            anchor="w"
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            info_frame, text=f"{artist}  •  {dur_str}",
+            font=ctk.CTkFont(size=11), text_color="#8a8a9a",
+            anchor="w"
+        ).pack(anchor="w")
+
+        # File size
+        audio_path = os.path.join(repo_path, song.get('audioUrl', ''))
+        if os.path.exists(audio_path):
+            size_mb = round(os.path.getsize(audio_path) / (1024 * 1024), 1)
+            ctk.CTkLabel(
+                inner, text=f"{size_mb} MB",
+                font=ctk.CTkFont(size=11), text_color="#55556a", width=50
+            ).pack(side="left", padx=(0, 8))
+
+        # Nút xóa
+        song_id = song.get('id', '')
+        song_title = song.get('title', '')
+
+        def do_delete(sid=song_id, stitle=song_title):
+            self._delete_song(sid, stitle, parent, mgr_window)
+
+        ctk.CTkButton(
+            inner, text="🗑️ Xóa", width=60, height=28,
+            fg_color="#7f1d1d", hover_color="#991b1b",
+            text_color="#fca5a5", font=ctk.CTkFont(size=11),
+            command=do_delete
+        ).pack(side="right")
+
+    def _delete_song(self, song_id, song_title, scroll_frame, mgr_window):
+        """Xóa bài hát khỏi repo và push."""
+        # Xác nhận
+        confirm = ctk.CTkToplevel(mgr_window)
+        confirm.title("Xác nhận xóa")
+        confirm.geometry("420x160")
+        confirm.transient(mgr_window)
+        confirm.grab_set()
+        confirm.configure(fg_color=self.BG_DARK)
+
+        ctk.CTkLabel(
+            confirm, text="⚠️ Xóa bài hát?",
+            font=ctk.CTkFont(size=14, weight="bold"), text_color="#fbbf24"
+        ).pack(pady=(16, 4))
+
+        ctk.CTkLabel(
+            confirm, text=f'"{song_title}"',
+            font=ctk.CTkFont(size=12), text_color="#8a8a9a",
+            wraplength=380
+        ).pack(pady=(0, 12))
+
+        btn_row = ctk.CTkFrame(confirm, fg_color="transparent")
+        btn_row.pack(pady=(0, 12))
+
+        ctk.CTkButton(
+            btn_row, text="Hủy", width=100, height=32,
+            fg_color="transparent", border_width=1, border_color="#555",
+            hover_color="#2a2a3e",
+            command=confirm.destroy
+        ).pack(side="left", padx=8)
+
+        def execute_delete():
+            confirm.destroy()
+            self._log(f"🗑️ Đang xóa: {song_title}")
+            threading.Thread(
+                target=self._do_delete, daemon=True,
+                args=(song_id, song_title, scroll_frame, mgr_window)
+            ).start()
+
+        ctk.CTkButton(
+            btn_row, text="🗑️ Xóa & Push", width=120, height=32,
+            fg_color="#991b1b", hover_color="#7f1d1d",
+            text_color="#fca5a5", font=ctk.CTkFont(weight="bold"),
+            command=execute_delete
+        ).pack(side="left", padx=8)
+
+    def _do_delete(self, song_id, song_title, scroll_frame, mgr_window):
+        """Thực hiện xóa bài hát (chạy trên thread riêng)."""
+        config = self.config
+        repo_path = config['repo_path']
+
+        # Bước 1: Xóa khỏi playlist.json → lấy info file cần xóa
+        removed = remove_song_from_playlist(repo_path, config['playlist_file'], song_id)
+        if not removed:
+            self.after(0, lambda: self._log(f"❌ Không tìm thấy bài '{song_title}' trong playlist"))
+            return
+
+        # Bước 2: Xác định files cần xóa
+        files_to_delete = []
+        audio_url = removed.get('audioUrl', '')
+        cover_url = removed.get('cover', '')
+
+        if audio_url:
+            files_to_delete.append(audio_url)
+        if cover_url and cover_url != 'assets/covers/default-cover.jpg':
+            files_to_delete.append(cover_url)
+
+        self.after(0, lambda: self._log(f"📁 Xóa {len(files_to_delete)} file: {', '.join(files_to_delete)}"))
+
+        # Bước 3: Git remove + push
+        commit_msg = f"🗑️ Remove: {song_title}"
+        result = git_remove_and_push(
+            repo_path, files_to_delete, config['playlist_file'],
+            commit_msg, branch=config['git_branch']
+        )
+
+        if result['success']:
+            self.after(0, lambda: self._log(f"✅ Đã xóa '{song_title}' và push thành công!"))
+            # Refresh danh sách
+            self.after(100, lambda: self._load_songs_into_manager(scroll_frame, mgr_window))
+        else:
+            self.after(0, lambda e=result['error']: self._log(f"❌ Xóa thất bại: {e}"))
+
+        self.after(0, lambda: self._update_repo_stats())
 
 
 # ===== MAIN =====

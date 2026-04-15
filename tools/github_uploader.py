@@ -269,3 +269,127 @@ def git_pull(repo_path, branch='main'):
         }
     except Exception as e:
         return {'success': False, 'output': '', 'error': str(e)}
+
+
+def remove_song_from_playlist(repo_path, playlist_file, song_id):
+    """
+    Xóa bài hát khỏi playlist.json theo ID.
+    
+    Returns:
+        dict hoặc None: thông tin bài đã xóa (để biết file cần xóa)
+    """
+    full_path = os.path.join(repo_path, playlist_file)
+    
+    if not os.path.exists(full_path):
+        return None
+
+    try:
+        with open(full_path, 'r', encoding='utf-8') as f:
+            playlist = json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return None
+
+    if not isinstance(playlist, list):
+        return None
+
+    # Tìm và xóa bài hát
+    removed_song = None
+    new_playlist = []
+    for song in playlist:
+        if song.get('id') == song_id:
+            removed_song = song
+        else:
+            new_playlist.append(song)
+
+    if removed_song is None:
+        return None
+
+    # Ghi lại playlist
+    with open(full_path, 'w', encoding='utf-8') as f:
+        json.dump(new_playlist, f, ensure_ascii=False, indent=2)
+
+    return removed_song
+
+
+def git_remove_and_push(repo_path, files_to_delete, playlist_file, message, branch='main'):
+    """
+    Xóa files khỏi repo và push.
+    
+    Args:
+        repo_path: Đường dẫn repo
+        files_to_delete: List đường dẫn tương đối cần xóa
+        playlist_file: Đường dẫn tương đối playlist.json (đã được cập nhật)
+        message: Commit message
+        branch: Branch name
+        
+    Returns:
+        dict: {success, output, error}
+    """
+    result = {'success': False, 'output': '', 'error': None}
+
+    try:
+        # Xóa file vật lý + git rm
+        for f in files_to_delete:
+            full_path = os.path.join(repo_path, f)
+            if os.path.exists(full_path):
+                os.remove(full_path)
+            # Git rm (bỏ qua lỗi nếu file không tracked)
+            subprocess.run(
+                ['git', 'rm', '--cached', '--ignore-unmatch', f],
+                capture_output=True, text=True,
+                cwd=repo_path, timeout=10
+            )
+
+        # Git add playlist.json (đã cập nhật) + staged deletions
+        subprocess.run(
+            ['git', 'add', playlist_file],
+            capture_output=True, text=True,
+            cwd=repo_path, timeout=10
+        )
+        subprocess.run(
+            ['git', 'add', '-A'],
+            capture_output=True, text=True,
+            cwd=repo_path, timeout=10
+        )
+
+        # Kiểm tra có gì để commit
+        proc_status = subprocess.run(
+            ['git', 'status', '--porcelain'],
+            capture_output=True, text=True,
+            cwd=repo_path, timeout=10
+        )
+        if not (proc_status.stdout or '').strip():
+            result['output'] = "Không có thay đổi nào cần commit"
+            result['success'] = True
+            return result
+
+        # Git commit
+        proc = subprocess.run(
+            ['git', 'commit', '-m', message],
+            capture_output=True, text=True,
+            cwd=repo_path, timeout=30
+        )
+        if proc.returncode != 0:
+            result['error'] = f"Git commit failed: {(proc.stderr or '').strip()}"
+            return result
+
+        # Git push
+        proc = subprocess.run(
+            ['git', 'push', 'origin', branch],
+            capture_output=True, text=True,
+            cwd=repo_path, timeout=120
+        )
+        if proc.returncode != 0:
+            result['error'] = f"Git push failed: {(proc.stderr or '').strip()}"
+            return result
+
+        result['success'] = True
+        result['output'] = f"Đã xóa {len(files_to_delete)} file và push thành công"
+
+    except subprocess.TimeoutExpired:
+        result['error'] = "Git command bị timeout"
+    except Exception as e:
+        result['error'] = f"Lỗi: {e}"
+
+    return result
+
