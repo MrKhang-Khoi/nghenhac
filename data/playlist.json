@@ -97,5 +97,16 @@
     "duration": 355,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "ai_rồi_cũng_sẽ_khác_hà_nhi_live_version_at_giao_lộ_thời_gian",
+    "title": "AI RỒI CŨNG SẼ KHÁC | HÀ NHI | LIVE VERSION AT GIAO LỘ THỜI GIAN",
+    "artist": "Hà Nhi Official",
+    "album": "",
+    "cover": "assets/covers/AI_RỒI_CŨNG_SẼ_KHÁC_HÀ_NHI_LIVE_VERSION_AT_GIAO_LỘ_THỜI_GIAN.jpg",
+    "audioUrl": "assets/audio/AI_RỒI_CŨNG_SẼ_KHÁC_HÀ_NHI_LIVE_VERSION_AT_GIAO_LỘ_THỜI_GIAN.mp3",
+    "duration": 290,
+    "lyrics": "",
+    "favorite": false
   }
 ]
