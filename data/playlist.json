@@ -130,5 +130,16 @@
     "duration": 377,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "lien_khuc_dinh_uoc_-_huynh_that_ft_phuong_anh_cap_song_ca_bo",
+    "title": "Liên Khúc Đính Ước - Huỳnh Thật ft Phương Anh | Cặp Song Ca Bolero Nhạc Vàng Xuất Sắc Gây Nghiện",
+    "artist": "Huỳnh Thật Bolero",
+    "album": "",
+    "cover": "assets/covers/Lien_Khuc_Dinh_Uoc_-_Huynh_That_ft_Phuong_Anh_Cap_Song_Ca_Bo.jpg",
+    "audioUrl": "assets/audio/Lien_Khuc_Dinh_Uoc_-_Huynh_That_ft_Phuong_Anh_Cap_Song_Ca_Bo.mp3",
+    "duration": 1187,
+    "lyrics": "",
+    "favorite": false
   }
 ]
