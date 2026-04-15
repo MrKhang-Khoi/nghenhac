@@ -35,16 +35,32 @@ def check_dependencies():
     return missing
 
 
+# Bảng chuyển đổi tiếng Việt → ASCII
+_VIET_MAP = str.maketrans(
+    'àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ'
+    'ÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴĐ',
+    'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd'
+    'AAAAAAAAAAAAAAAAAEEEEEEEEEEEIIIIIOOOOOOOOOOOOOOOOOOUUUUUUUUUUUYYYYYD'
+)
+
+
 def sanitize_filename(text):
-    """Loại bỏ ký tự đặc biệt khỏi tên file."""
-    # Bỏ ký tự không hợp lệ cho Windows
-    cleaned = re.sub(r'[<>:"/\\|?*]', '', text)
-    # Thay khoảng trắng bằng gạch dưới
-    cleaned = re.sub(r'\s+', '_', cleaned)
-    # Bỏ gạch dưới liên tiếp
+    """
+    Chuyển đổi tên bài hát thành tên file an toàn.
+    - Chuyển tiếng Việt → ASCII (tránh URL-encode dài)
+    - Bỏ ký tự đặc biệt
+    - Giới hạn 60 ký tự
+    """
+    # Bước 1: Chuyển tiếng Việt → ASCII
+    cleaned = text.translate(_VIET_MAP)
+    # Bước 2: Bỏ ký tự không hợp lệ (giữ chữ, số, dấu gạch, dấu chấm)
+    cleaned = re.sub(r'[<>:"/\\|?*\[\]{}()!@#$%^&+=~`\',:;]', '', cleaned)
+    # Bước 3: Thay khoảng trắng / ký tự lạ bằng gạch dưới
+    cleaned = re.sub(r'[^a-zA-Z0-9._-]', '_', cleaned)
+    # Bước 4: Bỏ gạch dưới liên tiếp
     cleaned = re.sub(r'_+', '_', cleaned)
-    # Giới hạn độ dài
-    cleaned = cleaned.strip('_')[:80]
+    # Bước 5: Giới hạn 60 ký tự (tránh URL quá dài trên GitHub Pages)
+    cleaned = cleaned.strip('_.- ')[:60].rstrip('_.- ')
     return cleaned if cleaned else 'untitled'
 
 

@@ -8,15 +8,16 @@
  * - Cover images: Cache-first sau lần đầu load
  */
 
-const APP_CACHE = 'vinyl-noir-app-v2';
-const COVER_CACHE = 'vinyl-noir-covers-v2';
-const AUDIO_CACHE = 'vinyl-noir-audio-v2';
+const APP_CACHE = 'vinyl-noir-app-v3';
+const COVER_CACHE = 'vinyl-noir-covers-v3';
+const AUDIO_CACHE = 'vinyl-noir-audio-v3';
 
 // Files cần cache cho app shell
 const APP_SHELL_FILES = [
     './',
     './index.html',
     './manifest.json',
+    './data/playlist.json',
     './assets/css/style.css',
     './assets/js/app.js',
     './assets/js/player.js',

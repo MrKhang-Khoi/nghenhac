@@ -8,8 +8,8 @@
 
 import { formatBytes } from './utils.js';
 
-const AUDIO_CACHE_NAME = 'vinyl-noir-audio-v2';
-const COVER_CACHE_NAME = 'vinyl-noir-covers-v2';
+const AUDIO_CACHE_NAME = 'vinyl-noir-audio-v3';
+const COVER_CACHE_NAME = 'vinyl-noir-covers-v3';
 
 class StorageManager {
     constructor() {
