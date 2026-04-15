@@ -141,5 +141,16 @@
     "duration": 1187,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "lien_khuc_mua_he_tuoi_hoc_tro_-_nhu_y_hoang_hai_y_linh",
+    "title": "Liên Khúc Mùa Hè Tuổi Học Trò - Như Ý, Hoàng Hải, Ý Linh",
+    "artist": "NHƯ Ý BOLERO OFFICIAL",
+    "album": "",
+    "cover": "assets/covers/Lien_Khuc_Mua_He_Tuoi_Hoc_Tro_-_Nhu_Y_Hoang_Hai_Y_Linh.jpg",
+    "audioUrl": "assets/audio/Lien_Khuc_Mua_He_Tuoi_Hoc_Tro_-_Nhu_Y_Hoang_Hai_Y_Linh.mp3",
+    "duration": 845,
+    "lyrics": "",
+    "favorite": false
   }
 ]
