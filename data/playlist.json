@@ -119,5 +119,16 @@
     "duration": 266,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "ke_say_tinh_-_quoc_thien_sang_tac_le_cuong_89g_team_live_con",
+    "title": "Kẻ Say Tình - Quốc Thiên | Sáng tác: Lê Cương, 89G Team | Live Concert SKYNote 2025",
+    "artist": "Quốc Thiên Official",
+    "album": "",
+    "cover": "assets/covers/Ke_Say_Tinh_-_Quoc_Thien_Sang_tac_Le_Cuong_89G_Team_Live_Con.jpg",
+    "audioUrl": "assets/audio/Ke_Say_Tinh_-_Quoc_Thien_Sang_tac_Le_Cuong_89G_Team_Live_Con.mp3",
+    "duration": 377,
+    "lyrics": "",
+    "favorite": false
   }
 ]
