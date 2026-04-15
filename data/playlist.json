@@ -75,5 +75,16 @@
     "duration": 397,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "chuyến_tàu_hoàng_hôn_-_lệ_quyên_(live)_video_by_3production",
+    "title": "Chuyến Tàu Hoàng Hôn - Lệ Quyên (LIVE) video by 3production",
+    "artist": "3 Production",
+    "album": "",
+    "cover": "assets/covers/default-cover.jpg",
+    "audioUrl": "assets/audio/Chuyến_Tàu_Hoàng_Hôn_-_Lệ_Quyên_(LIVE)_video_by_3production.mp3",
+    "duration": 301,
+    "lyrics": "",
+    "favorite": false
   }
 ]
