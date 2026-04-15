@@ -31,5 +31,16 @@
     "duration": 331,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "mashup_để_nhớ_một_thời_ta_đã_yêu_&_nếu_em_được_chọn_lựa_-_quốc_thiên_live_at_#lu",
+    "title": "Mashup ĐỂ NHỚ MỘT THỜI TA ĐÃ YÊU & NẾU EM ĐƯỢC CHỌN LỰA - QUỐC THIÊN live at #Lululola",
+    "artist": "Lululola Show",
+    "album": "",
+    "cover": "assets/covers/Mashup_ĐỂ_NHỚ_MỘT_THỜI_TA_ĐÃ_YÊU_&_NẾU_EM_ĐƯỢC_CHỌN_LỰA_-_QUỐC_THIÊN_live_at_#Lu.jpg",
+    "audioUrl": "assets/audio/Mashup_ĐỂ_NHỚ_MỘT_THỜI_TA_ĐÃ_YÊU_&_NẾU_EM_ĐƯỢC_CHỌN_LỰA_-_QUỐC_THIÊN_live_at_#Lu.mp3",
+    "duration": 379,
+    "lyrics": "",
+    "favorite": false
   }
 ]
