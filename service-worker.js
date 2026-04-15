@@ -8,9 +8,9 @@
  * - Cover images: Cache-first sau lần đầu load
  */
 
-const APP_CACHE = 'vinyl-noir-app-v1';
-const COVER_CACHE = 'vinyl-noir-covers-v1';
-const AUDIO_CACHE = 'vinyl-noir-audio-v1';
+const APP_CACHE = 'vinyl-noir-app-v2';
+const COVER_CACHE = 'vinyl-noir-covers-v2';
+const AUDIO_CACHE = 'vinyl-noir-audio-v2';
 
 // Files cần cache cho app shell
 const APP_SHELL_FILES = [
@@ -79,9 +79,11 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 2. Audio files — Cache-first (chỉ có trong cache nếu user đã tải offline)
+    // 2. Audio files — Chỉ phục vụ từ cache nếu đã tải offline
+    //    KHÔNG tự cache từ network (Audio dùng Range requests → 206 → Cache API không hỗ trợ)
+    //    Việc cache audio được xử lý bởi storage.js
     if (requestPath.includes('/assets/audio/')) {
-        event.respondWith(cacheFirst(event.request, AUDIO_CACHE));
+        event.respondWith(audioCacheOnly(event.request));
         return;
     }
 
@@ -105,7 +107,8 @@ async function cacheFirst(request, cacheName) {
         if (cached) return cached;
 
         const response = await fetch(request);
-        if (response.ok) {
+        // Chỉ cache response status 200 (bỏ qua 206 Partial Content)
+        if (response.status === 200) {
             const cache = await caches.open(cacheName);
             cache.put(request, response.clone());
         }
@@ -130,7 +133,7 @@ async function cacheFirst(request, cacheName) {
 async function networkFirst(request, cacheName) {
     try {
         const response = await fetch(request);
-        if (response.ok) {
+        if (response.status === 200) {
             const cache = await caches.open(cacheName);
             cache.put(request, response.clone());
         }
@@ -154,7 +157,7 @@ async function cacheFirstWithNetworkFallback(request, cacheName) {
         if (cached) return cached;
 
         const response = await fetch(request);
-        if (response.ok) {
+        if (response.status === 200) {
             const cache = await caches.open(cacheName);
             cache.put(request, response.clone());
         }
@@ -165,6 +168,26 @@ async function cacheFirstWithNetworkFallback(request, cacheName) {
 
         // Trả về default cover nếu cover không tải được
         return caches.match('./assets/covers/default-cover.jpg');
+    }
+}
+
+/**
+ * Audio cache-only strategy
+ * Chỉ phục vụ từ cache (nếu user đã tải offline qua storage.js)
+ * Nếu không có cache → để trình duyệt tự fetch (tránh cache 206)
+ */
+async function audioCacheOnly(request) {
+    try {
+        const cached = await caches.match(request, { ignoreSearch: true });
+        if (cached) return cached;
+        // Không có trong cache → fetch từ network bình thường
+        // KHÔNG cache kết quả (vì audio dùng Range requests → 206)
+        return fetch(request);
+    } catch (err) {
+        return new Response('Audio not available offline', {
+            status: 503,
+            statusText: 'Service Unavailable'
+        });
     }
 }
 
