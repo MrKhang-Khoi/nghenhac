@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.spec
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temp
+*.tmp
+*.bak
+*.log
+
+# Do not ignore audio and cover files (they need to be in repo)
+# !assets/audio/
+# !assets/covers/

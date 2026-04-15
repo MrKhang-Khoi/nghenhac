@@ -1,0 +1,12 @@
+{
+    "repo_path": "",
+    "audio_dir": "assets/audio",
+    "covers_dir": "assets/covers",
+    "playlist_file": "data/playlist.json",
+    "git_branch": "main",
+    "audio_quality": "192",
+    "audio_format": "mp3",
+    "max_file_size_mb": 95,
+    "auto_push": true,
+    "ffmpeg_path": ""
+}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Vinyl Noir — Ứng dụng nghe nhạc MP3 offline với giao diện sang trọng. PWA cài đặt trên Android.">
+    <meta name="keywords" content="music player, MP3, PWA, offline, vinyl, nghe nhạc">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Vinyl Noir — Nghe Nhạc MP3">
+    <meta property="og:description" content="Ứng dụng nghe nhạc MP3 offline sang trọng">
+    <meta property="og:type" content="website">
+
+    <title>Vinyl Noir — Nghe Nhạc</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <!-- Status Banner (Online/Offline) -->
+    <div id="status-banner" class="status-banner" role="alert"></div>
+
+    <div id="app">
+        <!-- ===== HEADER ===== -->
+        <header class="app-header">
+            <div class="app-logo">
+                <div class="app-logo-icon">🎵</div>
+                <span class="app-logo-text">Vinyl Noir</span>
+            </div>
+            <div class="header-actions">
+                <button id="btn-settings" class="icon-btn" title="Cài đặt & Cache" aria-label="Cài đặt">⚙️</button>
+            </div>
+        </header>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <div class="main-content">
+            <!-- Now Playing View -->
+            <div id="now-playing" class="now-playing">
+                <!-- Vinyl Disc -->
+                <div class="vinyl-container">
+                    <div id="vinyl-disc" class="vinyl-disc">
+                        <img id="vinyl-cover" class="vinyl-cover-img" 
+                             src="assets/covers/default-cover.jpg" 
+                             alt="Ảnh bìa album"
+                             onerror="this.src='assets/covers/default-cover.jpg'">
+                    </div>
+                    <div class="vinyl-center"></div>
+                </div>
+
+                <!-- Track Info -->
+                <div class="track-info">
+                    <h1 id="track-title" class="track-title">Vinyl Noir Player</h1>
+                    <p id="track-artist" class="track-artist">Chọn bài hát để phát</p>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-container">
+                    <div id="progress-wrapper" class="progress-bar-wrapper" role="slider" aria-label="Tiến trình phát nhạc">
+                        <div class="progress-track">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                    </div>
+                    <div class="progress-times">
+                        <span id="current-time">0:00</span>
+                        <span id="total-time">0:00</span>
+                    </div>
+                </div>
+
+                <!-- Player Controls -->
+                <div class="player-controls">
+                    <button id="btn-mode" class="ctrl-btn" title="Chế độ phát" aria-label="Chế độ phát">🔁</button>
+                    <button id="btn-prev" class="ctrl-btn" title="Bài trước" aria-label="Bài trước">⏮</button>
+                    <button id="btn-play" class="ctrl-btn play-btn" title="Phát / Tạm dừng" aria-label="Phát hoặc tạm dừng">▶</button>
+                    <button id="btn-next" class="ctrl-btn" title="Bài tiếp" aria-label="Bài tiếp">⏭</button>
+                    <button id="btn-favorite" class="ctrl-btn" title="Yêu thích" aria-label="Yêu thích">🤍</button>
+                </div>
+
+                <!-- Extra Controls -->
+                <div class="extra-controls">
+                    <div class="volume-container">
+                        <span id="volume-icon">🔊</span>
+                        <input id="volume-slider" class="volume-slider" 
+                               type="range" min="0" max="1" step="0.01" value="0.8"
+                               aria-label="Âm lượng">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playlist View -->
+            <div id="playlist-view" class="playlist-view hidden">
+                <!-- Search -->
+                <div class="search-container">
+                    <div class="search-bar">
+                        <span class="search-icon">🔍</span>
+                        <input id="search-input" class="search-input" 
+                               type="text" 
+                               placeholder="Tìm bài hát, nghệ sĩ..."
+                               autocomplete="off"
+                               aria-label="Tìm kiếm bài hát">
+                        <span id="search-clear" class="search-clear">✕</span>
+                    </div>
+                </div>
+
+                <!-- Song Count -->
+                <div class="song-list-header" style="padding: 0 16px;">
+                    <span id="song-count">0 bài hát</span>
+                </div>
+
+                <!-- Song List -->
+                <div id="song-list" class="song-list">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== NAVIGATION TABS ===== -->
+        <nav id="nav-tabs" class="nav-tabs no-mini-player" aria-label="Điều hướng chính">
+            <button id="tab-now-playing" class="nav-tab active" aria-label="Đang phát">
+                🎧 Đang phát
+            </button>
+            <button id="tab-playlist" class="nav-tab" aria-label="Danh sách">
+                📋 Danh sách
+            </button>
+        </nav>
+
+        <!-- ===== MINI PLAYER ===== -->
+        <div id="mini-player" class="mini-player">
+            <div class="mini-progress">
+                <div id="mini-progress-fill" class="mini-progress-fill"></div>
+            </div>
+            <div class="mini-player-content">
+                <img id="mini-cover" class="mini-cover" 
+                     src="assets/covers/default-cover.jpg" 
+                     alt="Cover"
+                     onerror="this.src='assets/covers/default-cover.jpg'">
+                <div class="mini-info">
+                    <div id="mini-title" class="mini-title">—</div>
+                    <div id="mini-artist" class="mini-artist">—</div>
+                </div>
+                <div class="mini-controls">
+                    <button id="mini-play" class="mini-btn" aria-label="Phát/Dừng">▶</button>
+                    <button id="mini-next" class="mini-btn" aria-label="Bài tiếp">⏭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SETTINGS PANEL ===== -->
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-sheet">
+            <div class="settings-header">
+                <h2 class="settings-title">⚙️ Cài đặt</h2>
+                <button id="settings-close" class="icon-btn" aria-label="Đóng">✕</button>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-label">💾 Bộ nhớ Cache</div>
+                <div class="cache-info">
+                    <span>Dung lượng đã dùng</span>
+                    <span id="cache-size" class="cache-size">0 B</span>
+                </div>
+                <button id="btn-download-all" class="action-btn">
+                    ⬇️ Tải tất cả để nghe offline
+                </button>
+                <button id="btn-clear-cache" class="action-btn danger">
+                    🗑️ Xóa toàn bộ cache
+                </button>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-label">ℹ️ Thông tin</div>
+                <div class="cache-info">
+                    <span>Phiên bản</span>
+                    <span>Vinyl Noir v1.0</span>
+                </div>
+                <div class="cache-info">
+                    <span>Trạng thái</span>
+                    <span id="connection-status">🟢 Online</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast (notification) -->
+    <div id="toast" class="toast"></div>
+
+    <!-- App Script (ES Module) -->
+    <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
