@@ -158,7 +158,7 @@ def git_add_commit_push(repo_path, files, message, branch='main'):
             cwd=repo_path, timeout=60
         )
         if proc.returncode != 0:
-            result['error'] = f"Git add failed: {proc.stderr}"
+            result['error'] = f"Git add failed: {(proc.stderr or '').strip()}"
             return result
 
         # Kiểm tra có gì để commit không
@@ -167,7 +167,7 @@ def git_add_commit_push(repo_path, files, message, branch='main'):
             capture_output=True, text=True,
             cwd=repo_path, timeout=10
         )
-        if not proc_status.stdout.strip():
+        if not (proc_status.stdout or '').strip():
             result['output'] = "Không có thay đổi nào cần commit"
             result['success'] = True
             return result
@@ -179,10 +179,10 @@ def git_add_commit_push(repo_path, files, message, branch='main'):
             cwd=repo_path, timeout=30
         )
         if proc.returncode != 0:
-            result['error'] = f"Git commit failed: {proc.stderr}"
+            result['error'] = f"Git commit failed: {(proc.stderr or '').strip()}"
             return result
 
-        result['output'] = proc.stdout.strip()
+        result['output'] = (proc.stdout or '').strip()
 
         # Git push
         proc = subprocess.run(
@@ -191,7 +191,7 @@ def git_add_commit_push(repo_path, files, message, branch='main'):
             cwd=repo_path, timeout=120  # Push có thể mất thời gian nếu file lớn
         )
         if proc.returncode != 0:
-            stderr = proc.stderr.strip()
+            stderr = (proc.stderr or '').strip()
             if 'rejected' in stderr.lower():
                 result['error'] = (
                     "Push bị từ chối! Có thể có thay đổi mới trên remote.\n"
@@ -208,7 +208,7 @@ def git_add_commit_push(repo_path, files, message, branch='main'):
             return result
 
         result['success'] = True
-        result['output'] += f"\n{proc.stdout.strip()}"
+        result['output'] += f"\n{(proc.stdout or '').strip()}"
 
     except subprocess.TimeoutExpired:
         result['error'] = "Git command bị timeout. Kiểm tra kết nối mạng."
@@ -264,8 +264,8 @@ def git_pull(repo_path, branch='main'):
         )
         return {
             'success': proc.returncode == 0,
-            'output': proc.stdout.strip(),
-            'error': proc.stderr.strip() if proc.returncode != 0 else None
+            'output': (proc.stdout or '').strip(),
+            'error': (proc.stderr or '').strip() if proc.returncode != 0 else None
         }
     except Exception as e:
         return {'success': False, 'output': '', 'error': str(e)}
