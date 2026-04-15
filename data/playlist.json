@@ -1,39 +1,6 @@
 [
   {
-    "id": "demo-001",
-    "title": "Bài Hát Demo 1",
-    "artist": "Nghệ Sĩ Demo",
-    "album": "Album Demo",
-    "cover": "assets/covers/default-cover.jpg",
-    "audioUrl": "assets/audio/demo-001.mp3",
-    "duration": 0,
-    "lyrics": "",
-    "favorite": false
-  },
-  {
-    "id": "demo-002",
-    "title": "Bài Hát Demo 2",
-    "artist": "Nghệ Sĩ Demo",
-    "album": "Album Demo",
-    "cover": "assets/covers/default-cover.jpg",
-    "audioUrl": "assets/audio/demo-002.mp3",
-    "duration": 0,
-    "lyrics": "",
-    "favorite": false
-  },
-  {
-    "id": "demo-003",
-    "title": "Bài Hát Demo 3",
-    "artist": "Nghệ Sĩ Demo",
-    "album": "Album Demo",
-    "cover": "assets/covers/default-cover.jpg",
-    "audioUrl": "assets/audio/demo-003.mp3",
-    "duration": 0,
-    "lyrics": "",
-    "favorite": false
-  },
-  {
-    "id": "như_đã_dấu_yêu_-_phú_quí_(official_mv)_bản_tình_ca_hay_nhất_mọi_thời_đại",
+    "id": "nhu-da-dau-yeu-phu-qui",
     "title": "Như Đã Dấu Yêu - Phú Quí (Official MV) || Bản Tình Ca Hay Nhất Mọi Thời Đại",
     "artist": "Phú Quí Official",
     "album": "",
