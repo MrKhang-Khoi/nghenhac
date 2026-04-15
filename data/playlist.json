@@ -53,5 +53,16 @@
     "duration": 286,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "vị_ngọt_đôi_môi_thanh_thảo_&_quang_dũng_làn_sóng_xanh_2004",
+    "title": "VỊ NGỌT ĐÔI MÔI | THANH THẢO & QUANG DŨNG | LÀN SÓNG XANH 2004",
+    "artist": "Phuong Nam Phim",
+    "album": "",
+    "cover": "assets/covers/default-cover.jpg",
+    "audioUrl": "assets/audio/VỊ_NGỌT_ĐÔI_MÔI_THANH_THẢO_&_QUANG_DŨNG_LÀN_SÓNG_XANH_2004.mp3",
+    "duration": 291,
+    "lyrics": "",
+    "favorite": false
   }
 ]
