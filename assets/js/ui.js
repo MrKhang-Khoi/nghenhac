@@ -9,6 +9,13 @@ import player, { PlayMode } from './player.js';
 import playlistManager from './playlist.js';
 import storageManager from './storage.js';
 import { formatTime, debounce, formatBytes } from './utils.js';
+import {
+    ICON_PLAY, ICON_PAUSE,
+    ICON_REPEAT, ICON_REPEAT_ONE, ICON_SHUFFLE, ICON_ARROW_RIGHT,
+    ICON_HEART_OUTLINE, ICON_HEART_FILLED,
+    ICON_VOLUME_HIGH, ICON_VOLUME_LOW, ICON_VOLUME_MUTE,
+    ICON_CHECK_CIRCLE, ICON_DOWNLOAD, ICON_MUSIC
+} from './icons.js';
 
 class UIManager {
     constructor() {
@@ -80,6 +87,9 @@ class UIManager {
             // Status
             statusBanner: document.getElementById('status-banner'),
             toast: document.getElementById('toast'),
+
+            // Song count badge
+            tabPlaylistCount: document.getElementById('tab-playlist-count'),
         };
 
         this._bindEvents();
@@ -284,9 +294,10 @@ class UIManager {
      * @private
      */
     _updatePlayButtons(playing) {
-        const playIcon = playing ? '⏸' : '▶';
-        this.elements.playBtn.textContent = playIcon;
-        this.elements.miniPlayBtn.textContent = playIcon;
+        const playIcon = playing ? ICON_PAUSE(28) : ICON_PLAY(28);
+        const miniIcon = playing ? ICON_PAUSE(22) : ICON_PLAY(22);
+        this.elements.playBtn.innerHTML = playIcon;
+        this.elements.miniPlayBtn.innerHTML = miniIcon;
     }
 
     /**
@@ -303,12 +314,12 @@ class UIManager {
      */
     _updateModeButton() {
         const icons = {
-            [PlayMode.REPEAT_ALL]: '🔁',
-            [PlayMode.REPEAT_ONE]: '🔂',
-            [PlayMode.SHUFFLE]: '🔀',
-            [PlayMode.REPEAT_OFF]: '➡️'
+            [PlayMode.REPEAT_ALL]: ICON_REPEAT(22),
+            [PlayMode.REPEAT_ONE]: ICON_REPEAT_ONE(22),
+            [PlayMode.SHUFFLE]: ICON_SHUFFLE(22),
+            [PlayMode.REPEAT_OFF]: ICON_ARROW_RIGHT(22)
         };
-        this.elements.modeBtn.textContent = icons[player.playMode] || '🔁';
+        this.elements.modeBtn.innerHTML = icons[player.playMode] || ICON_REPEAT(22);
         this.elements.modeBtn.classList.toggle('active', player.playMode !== PlayMode.REPEAT_OFF);
     }
 
@@ -317,7 +328,7 @@ class UIManager {
      * @private
      */
     _updateFavoriteButton(isFavorite) {
-        this.elements.favoriteBtn.textContent = isFavorite ? '❤️' : '🤍';
+        this.elements.favoriteBtn.innerHTML = isFavorite ? ICON_HEART_FILLED(22) : ICON_HEART_OUTLINE(22);
         this.elements.favoriteBtn.classList.toggle('active', isFavorite);
     }
 
@@ -327,11 +338,11 @@ class UIManager {
      */
     _updateVolumeIcon(volume) {
         if (volume === 0) {
-            this.elements.volumeIcon.textContent = '🔇';
+            this.elements.volumeIcon.innerHTML = ICON_VOLUME_MUTE(20);
         } else if (volume < 0.5) {
-            this.elements.volumeIcon.textContent = '🔉';
+            this.elements.volumeIcon.innerHTML = ICON_VOLUME_LOW(20);
         } else {
-            this.elements.volumeIcon.textContent = '🔊';
+            this.elements.volumeIcon.innerHTML = ICON_VOLUME_HIGH(20);
         }
     }
 
@@ -345,10 +356,17 @@ class UIManager {
         // Update song count
         this.elements.songCount.textContent = `${songs.length} bài hát`;
 
+        // Update tab badge with total count
+        if (this.elements.tabPlaylistCount) {
+            this.elements.tabPlaylistCount.textContent = playlistManager.songs.length > 0
+                ? playlistManager.songs.length
+                : '';
+        }
+
         if (songs.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">🎵</div>
+                    <div class="empty-state-icon">${ICON_MUSIC(48)}</div>
                     <div class="empty-state-text">Không tìm thấy bài hát nào</div>
                 </div>
             `;
@@ -380,12 +398,12 @@ class UIManager {
                         <div class="song-card-artist">${song.artist}</div>
                     </div>
                     <div class="song-card-actions">
-                        ${isOffline ? '<span class="offline-badge" title="Có sẵn offline">✅</span>' : ''}
+                        ${isOffline ? `<span class="offline-badge" title="Có sẵn offline">${ICON_CHECK_CIRCLE(14)}</span>` : ''}
                         <span class="song-card-duration">${song.duration ? formatTime(song.duration) : ''}</span>
                         <button class="favorite-btn ${isFav ? 'active' : ''}" 
                                 data-song-id="${song.id}"
                                 title="${isFav ? 'Bỏ yêu thích' : 'Thêm yêu thích'}">
-                            ${isFav ? '❤️' : '🤍'}
+                            ${isFav ? ICON_HEART_FILLED(18) : ICON_HEART_OUTLINE(18)}
                         </button>
                     </div>
                 </div>
@@ -418,7 +436,7 @@ class UIManager {
                 e.stopPropagation();
                 const songId = btn.dataset.songId;
                 const isFav = playlistManager.toggleFavorite(songId);
-                btn.textContent = isFav ? '❤️' : '🤍';
+                btn.innerHTML = isFav ? ICON_HEART_FILLED(18) : ICON_HEART_OUTLINE(18);
                 btn.classList.toggle('active', isFav);
 
                 // Cập nhật main favorite button nếu đang phát bài này
@@ -514,10 +532,10 @@ class UIManager {
         this.showToast('⬇️ Đang tải tất cả bài hát...');
 
         const result = await storageManager.downloadAll(playlistManager.songs, (i, total, status, song) => {
-            this.elements.btnDownloadAll.textContent = `⬇️ Đang tải ${i + 1}/${total}...`;
+            this.elements.btnDownloadAll.innerHTML = `${ICON_DOWNLOAD(18)} Đang tải ${i + 1}/${total}...`;
         });
 
-        this.elements.btnDownloadAll.textContent = '⬇️ Tải tất cả để nghe offline';
+        this.elements.btnDownloadAll.innerHTML = `${ICON_DOWNLOAD(18)} Tải tất cả để nghe offline`;
         this.showToast(`✅ Đã tải ${result.successful}/${result.total} bài`, 'success');
 
         // Refresh cache size + song list
