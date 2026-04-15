@@ -64,5 +64,16 @@
     "duration": 291,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "liên_khúc_mưa_(_đoạn_buồn_đêm_mưa_&_mưa_đêm_tỉnh_nhỏ_)_-_lệ_quyên_khúc_tình_xưa_",
+    "title": "Liên Khúc Mưa ( Đoạn Buồn Đêm Mưa & Mưa Đêm Tỉnh Nhỏ ) - Lệ Quyên | Khúc Tình Xưa 6",
+    "artist": "Lệ Quyên",
+    "album": "",
+    "cover": "assets/covers/Liên_Khúc_Mưa_(_Đoạn_Buồn_Đêm_Mưa_&_Mưa_Đêm_Tỉnh_Nhỏ_)_-_Lệ_Quyên_Khúc_Tình_Xưa_.jpg",
+    "audioUrl": "assets/audio/Liên_Khúc_Mưa_(_Đoạn_Buồn_Đêm_Mưa_&_Mưa_Đêm_Tỉnh_Nhỏ_)_-_Lệ_Quyên_Khúc_Tình_Xưa_.mp3",
+    "duration": 397,
+    "lyrics": "",
+    "favorite": false
   }
 ]
