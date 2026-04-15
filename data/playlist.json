@@ -97,5 +97,16 @@
     "duration": 290,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "anh_muon_em_song_sao_bao_anh_official_mv",
+    "title": "Anh Muốn Em Sống Sao | Bảo Anh | Official MV",
+    "artist": "POPS MUSIC",
+    "album": "",
+    "cover": "assets/covers/Anh_Muon_Em_Song_Sao_Bao_Anh_Official_MV.jpg",
+    "audioUrl": "assets/audio/Anh_Muon_Em_Song_Sao_Bao_Anh_Official_MV.mp3",
+    "duration": 294,
+    "lyrics": "",
+    "favorite": false
   }
 ]
