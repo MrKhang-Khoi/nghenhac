@@ -86,5 +86,16 @@
     "duration": 301,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "đoạn_tuyệt_-_lệ_quyên(live)_video_by_3production",
+    "title": "Đoạn Tuyệt - Lệ Quyên(LIVE) video by 3production",
+    "artist": "3 Production",
+    "album": "",
+    "cover": "assets/covers/Đoạn_Tuyệt_-_Lệ_Quyên(LIVE)_video_by_3production.jpg",
+    "audioUrl": "assets/audio/Đoạn_Tuyệt_-_Lệ_Quyên(LIVE)_video_by_3production.mp3",
+    "duration": 355,
+    "lyrics": "",
+    "favorite": false
   }
 ]
