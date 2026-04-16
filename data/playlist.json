@@ -152,5 +152,16 @@
     "duration": 845,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "doan_tai_but_rock_ballad_-_st_tu_nhi_bang_giang_noi_dau_don",
+    "title": "Đoạn Tái Bút (Rock Ballad) -  St: Tú Nhi & Bằng Giang | Nỗi đau dồn nén âm ỉ",
+    "artist": "MP Melody",
+    "album": "",
+    "cover": "assets/covers/Doan_Tai_But_Rock_Ballad_-_St_Tu_Nhi_Bang_Giang_Noi_dau_don.jpg",
+    "audioUrl": "assets/audio/Doan_Tai_But_Rock_Ballad_-_St_Tu_Nhi_Bang_Giang_Noi_dau_don.webm",
+    "duration": 293,
+    "lyrics": "",
+    "favorite": false
   }
 ]
