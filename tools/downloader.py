@@ -327,32 +327,47 @@ def fetch_lyrics(title, artist, duration=0):
             
             if not data or not isinstance(data, list):
                 return ''
-            
-            best = None
+
+            def _title_matches(item_name, search_name):
+                """Kiểm tra trackName LRCLIB có khớp title tìm kiếm không."""
+                a = item_name.lower().strip()
+                b = search_name.lower().strip()
+                if not a or not b:
+                    return False
+                return a == b or a in b or b in a
+
+            # ═══ Ưu tiên 1: trackName KHỚP + synced + duration gần ═══
             for item in data:
-                if item.get('syncedLyrics'):
-                    if dur > 0:
-                        item_dur = item.get('duration', 0)
-                        if item_dur and abs(item_dur - dur) < 15:
-                            best = item
-                            break
-                    else:
-                        best = item
-                        break
-            if not best:
+                if _title_matches(item.get('trackName', ''), q_title):
+                    if item.get('syncedLyrics'):
+                        if dur > 0:
+                            item_dur = item.get('duration', 0)
+                            if item_dur and abs(item_dur - dur) < 30:
+                                return item['syncedLyrics']
+                        else:
+                            return item['syncedLyrics']
+
+            # ═══ Ưu tiên 2: trackName KHỚP + synced (bất kỳ duration) ═══
+            for item in data:
+                if _title_matches(item.get('trackName', ''), q_title):
+                    if item.get('syncedLyrics'):
+                        return item['syncedLyrics']
+
+            # ═══ Ưu tiên 3: trackName KHỚP + plain lyrics ═══
+            for item in data:
+                if _title_matches(item.get('trackName', ''), q_title):
+                    if item.get('plainLyrics'):
+                        return item['plainLyrics']
+
+            # ═══ Fallback: KHÔNG khớp title — chỉ chọn nếu duration rất sát ═══
+            if dur > 0:
                 for item in data:
                     if item.get('syncedLyrics'):
-                        best = item
-                        break
-            if not best:
-                for item in data:
-                    if item.get('plainLyrics'):
-                        best = item
-                        break
-            
-            if not best:
-                return ''
-            return best.get('syncedLyrics') or best.get('plainLyrics') or ''
+                        item_dur = item.get('duration', 0)
+                        if item_dur and abs(item_dur - dur) < 5:
+                            return item['syncedLyrics']
+
+            return ''
         except Exception:
             return ''
 
