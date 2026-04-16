@@ -174,5 +174,16 @@
     "duration": 244,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "anh_khong_muon_lam_nguoi_thu_3_-_lam_chan_huy",
+    "title": "Anh Không Muốn Làm Người Thứ 3 - Lâm Chấn Huy",
+    "artist": "Lâm Chấn Huy Tube",
+    "album": "",
+    "cover": "assets/covers/Anh_Khong_Muon_Lam_Nguoi_Thu_3_-_Lam_Chan_Huy.jpg",
+    "audioUrl": "assets/audio/Anh_Khong_Muon_Lam_Nguoi_Thu_3_-_Lam_Chan_Huy.mp3",
+    "duration": 315,
+    "lyrics": "",
+    "favorite": false
   }
 ]
