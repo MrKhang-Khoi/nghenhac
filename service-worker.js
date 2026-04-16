@@ -8,9 +8,9 @@
  * - Cover images: Cache-first sau lần đầu load
  */
 
-const APP_CACHE = 'vinyl-noir-app-v3';
-const COVER_CACHE = 'vinyl-noir-covers-v3';
-const AUDIO_CACHE = 'vinyl-noir-audio-v3';
+const APP_CACHE = 'vinyl-noir-app-v4';
+const COVER_CACHE = 'vinyl-noir-covers-v4';
+const AUDIO_CACHE = 'vinyl-noir-audio-v4';
 
 // Files cần cache cho app shell
 const APP_SHELL_FILES = [
@@ -26,6 +26,8 @@ const APP_SHELL_FILES = [
     './assets/js/media-session.js',
     './assets/js/storage.js',
     './assets/js/utils.js',
+    './assets/js/icons.js',
+    './assets/js/lyrics.js',
     './assets/covers/default-cover.jpg'
 ];
 

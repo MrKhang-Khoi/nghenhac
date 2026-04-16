@@ -12,6 +12,7 @@ import os
 import re
 import json
 import urllib.request
+import urllib.parse
 from pathlib import Path
 
 try:
@@ -145,6 +146,7 @@ def get_video_info(url):
             'filesize_approx': approx_size_mb,
             'album': info.get('album', ''),
             'webpage_url': info.get('webpage_url', url),
+            '_raw_formats': info.get('formats', []),
         }
 
     except yt_dlp.utils.DownloadError as e:
@@ -249,6 +251,310 @@ def download_audio(url, output_dir, quality='192', ffmpeg_path=None, progress_ca
                 "Hoặc chạy: winget install ffmpeg"
             )
         raise RuntimeError(f"Lỗi tải audio: {e}")
+
+
+# ===== LYRICS =====
+
+def fetch_lyrics(title, artist, duration=0):
+    """
+    Lấy lyrics từ LRCLIB API (miễn phí, không cần API key).
+    
+    Thử tìm synced lyrics (LRC format) trước, fallback sang plain text.
+    
+    Args:
+        title: Tên bài hát
+        artist: Tên nghệ sĩ
+        duration: Thời lượng (giây), để match chính xác hơn
+    
+    Returns:
+        str: Lyrics text (LRC format nếu có, plain text nếu không) hoặc ''
+    """
+    try:
+        query = urllib.parse.urlencode({
+            'q': f'{title} {artist}'
+        })
+        url = f'https://lrclib.net/api/search?{query}'
+        
+        req = urllib.request.Request(url, headers={
+            'User-Agent': 'VinylNoir/1.0 (https://github.com)',
+        })
+        
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        
+        if not data or not isinstance(data, list):
+            return ''
+        
+        # Tìm kết quả phù hợp nhất
+        best = None
+        
+        # Vòng 1: Tìm bài có synced lyrics + duration gần nhất
+        for item in data:
+            if item.get('syncedLyrics'):
+                if duration > 0:
+                    item_dur = item.get('duration', 0)
+                    if item_dur and abs(item_dur - duration) < 15:
+                        best = item
+                        break
+                else:
+                    best = item
+                    break
+        
+        # Vòng 2: Bài có synced lyrics bất kỳ
+        if not best:
+            for item in data:
+                if item.get('syncedLyrics'):
+                    best = item
+                    break
+        
+        # Vòng 3: Fallback bài có plain lyrics
+        if not best:
+            for item in data:
+                if item.get('plainLyrics'):
+                    best = item
+                    break
+        
+        if not best:
+            return ''
+        
+        # Ưu tiên synced lyrics (LRC format — có timestamp)
+        return best.get('syncedLyrics') or best.get('plainLyrics') or ''
+        
+    except Exception as e:
+        print(f"[Downloader] Lỗi lấy lyrics: {e}")
+        return ''
+
+
+# ===== FORMAT CHOICES =====
+
+def build_format_choices(raw_formats, duration=0):
+    """
+    Tạo danh sách lựa chọn format cho user.
+
+    Args:
+        raw_formats: list format từ get_video_info()['_raw_formats']
+        duration: Thời lượng video (giây), dùng ước tính file size
+
+    Returns:
+        list of dict — mỗi dict chứa: key, label, category,
+                       ydl_format, postprocessors, output_ext
+    """
+    choices = []
+
+    # --- MP3 PRESETS (luôn có sẵn) ---
+    for quality, suffix in [('320', 'cao nhất'), ('192', 'tiêu chuẩn'), ('128', 'nhỏ gọn')]:
+        est_kb = int(quality) * duration // 8 if duration else 0
+        est_mb = round(est_kb / 1024, 1) if est_kb else 0
+        size_str = f" (~{est_mb} MB)" if est_mb else ""
+        choices.append({
+            'key': f'mp3_{quality}',
+            'label': f"\U0001f3b5 MP3 {quality}kbps \u2014 {suffix}{size_str}",
+            'category': 'audio',
+            'ydl_format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': quality,
+            }],
+            'output_ext': 'mp3',
+        })
+
+    if not raw_formats:
+        return choices
+
+    # --- AUDIO GỐC (Opus, AAC — không convert, giữ chất lượng) ---
+    seen_audio = set()
+    for f in raw_formats:
+        vcodec = f.get('vcodec', 'none') or 'none'
+        acodec = f.get('acodec', 'none') or 'none'
+        if vcodec != 'none' or acodec == 'none':
+            continue
+
+        abr = f.get('abr') or f.get('tbr') or 0
+        ext = f.get('ext', '')
+        if abr < 30:
+            continue
+
+        codec_name = ('Opus' if 'opus' in acodec.lower() else
+                      'AAC/M4A' if 'mp4a' in acodec.lower() else
+                      ext.upper())
+
+        dedup = f"{codec_name}_{int(abr)}"
+        if dedup in seen_audio:
+            continue
+        seen_audio.add(dedup)
+
+        filesize = f.get('filesize') or f.get('filesize_approx') or 0
+        size_mb = round(filesize / (1024 * 1024), 1) if filesize else 0
+        size_str = f" ({size_mb} MB)" if size_mb else ""
+
+        choices.append({
+            'key': f'original_{f.get("format_id", "")}',
+            'label': f"\U0001f3b5 {codec_name} {int(abr)}kbps \u2014 g\u1ed1c, kh\u00f4ng convert{size_str}",
+            'category': 'audio_original',
+            'ydl_format': f.get('format_id', ''),
+            'postprocessors': [],
+            'output_ext': ext,
+        })
+
+    # --- VIDEO (muxed + merge) ---
+    available_heights = {}
+    for f in raw_formats:
+        vcodec = f.get('vcodec', 'none') or 'none'
+        acodec = f.get('acodec', 'none') or 'none'
+        height = f.get('height', 0) or 0
+        if vcodec == 'none' or height < 144:
+            continue
+
+        is_muxed = acodec != 'none'
+        filesize = f.get('filesize') or f.get('filesize_approx') or 0
+
+        # Ưu tiên muxed stream (đã có audio sẵn)
+        if height not in available_heights or is_muxed:
+            available_heights[height] = {
+                'format_id': f.get('format_id', ''),
+                'is_muxed': is_muxed,
+                'filesize': filesize,
+            }
+
+    for h in sorted(available_heights.keys(), reverse=True):
+        v = available_heights[h]
+        if v['is_muxed']:
+            ydl_fmt = v['format_id']
+            merge_note = ""
+        else:
+            ydl_fmt = f"bestvideo[height<={h}]+bestaudio/best[height<={h}]"
+            merge_note = " \u26a1gh\u00e9p"
+
+        size_mb = round(v['filesize'] / (1024 * 1024), 1) if v['filesize'] else 0
+        size_str = f" (~{size_mb} MB)" if size_mb else ""
+
+        choices.append({
+            'key': f'video_{h}p',
+            'label': f"\U0001f3ac Video {h}p MP4{merge_note}{size_str}",
+            'category': 'video',
+            'ydl_format': ydl_fmt,
+            'postprocessors': [],
+            'output_ext': 'mp4',
+            'merge_output_format': 'mp4',
+        })
+
+    return choices
+
+
+def download_with_format(url, format_choice, output_dir, info=None,
+                         ffmpeg_path=None, progress_callback=None):
+    """
+    Tải media từ YouTube với format đã chọn.
+
+    Args:
+        url: URL YouTube
+        format_choice: dict từ build_format_choices()
+        output_dir: Thư mục lưu output
+        info: metadata dict (từ get_video_info), None = tự fetch
+        ffmpeg_path: Đường dẫn FFmpeg
+        progress_callback: callback(percent, status_text)
+
+    Returns:
+        dict: {filepath, filename, title, artist, duration, ext, category}
+    """
+    if yt_dlp is None:
+        raise RuntimeError("yt-dlp ch\u01b0a \u0111\u01b0\u1ee3c c\u00e0i.")
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    if not info:
+        info = get_video_info(url)
+    if not info:
+        raise RuntimeError("Kh\u00f4ng l\u1ea5y \u0111\u01b0\u1ee3c th\u00f4ng tin video")
+
+    filename_base = sanitize_filename(info['title'])
+    output_ext = format_choice.get('output_ext', 'mp3')
+    output_template = os.path.join(output_dir, f"{filename_base}.%(ext)s")
+
+    ydl_opts = {
+        'format': format_choice['ydl_format'],
+        'outtmpl': output_template,
+        'quiet': True,
+        'no_warnings': True,
+    }
+
+    # Postprocessors (convert MP3, etc.)
+    if format_choice.get('postprocessors'):
+        ydl_opts['postprocessors'] = format_choice['postprocessors']
+        ydl_opts['postprocessor_args'] = [
+            '-metadata', f'title={info["title"]}',
+            '-metadata', f'artist={info["artist"]}',
+        ]
+
+    # Merge format cho video (ghép video-only + audio-only)
+    if format_choice.get('merge_output_format'):
+        ydl_opts['merge_output_format'] = format_choice['merge_output_format']
+
+    if ffmpeg_path:
+        ydl_opts['ffmpeg_location'] = ffmpeg_path
+
+    # Progress hook
+    def progress_hook(d):
+        if progress_callback and d['status'] == 'downloading':
+            total = d.get('total_bytes') or d.get('total_bytes_estimate', 0)
+            downloaded = d.get('downloaded_bytes', 0)
+            if total > 0:
+                percent = (downloaded / total) * 100
+                progress_callback(percent, f"\u0110ang t\u1ea3i... {percent:.0f}%")
+        elif progress_callback and d['status'] == 'finished':
+            progress_callback(100, "\u0110ang x\u1eed l\u00fd file...")
+
+    ydl_opts['progress_hooks'] = [progress_hook]
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+        # Tìm file output
+        expected_path = os.path.join(output_dir, f"{filename_base}.{output_ext}")
+        if os.path.exists(expected_path):
+            final_path = expected_path
+        else:
+            # Tìm file mới nhất có tên khớp
+            final_path = None
+            for fname in sorted(
+                os.listdir(output_dir),
+                key=lambda x: os.path.getmtime(os.path.join(output_dir, x)),
+                reverse=True
+            ):
+                fpath = os.path.join(output_dir, fname)
+                if (fname.startswith(filename_base[:20])
+                        and not fname.endswith(('.tmp', '.part'))
+                        and os.path.isfile(fpath)):
+                    final_path = fpath
+                    break
+
+            if not final_path:
+                raise RuntimeError("Kh\u00f4ng t\u00ecm th\u1ea5y file sau khi t\u1ea3i")
+
+        actual_ext = os.path.splitext(final_path)[1].lstrip('.')
+
+        return {
+            'filepath': final_path,
+            'filename': os.path.basename(final_path),
+            'title': info['title'],
+            'artist': info['artist'],
+            'duration': info.get('duration', 0),
+            'album': info.get('album', ''),
+            'ext': actual_ext,
+            'category': format_choice.get('category', 'audio'),
+        }
+
+    except yt_dlp.utils.DownloadError as e:
+        error_msg = str(e)
+        if 'ffmpeg' in error_msg.lower() or 'ffprobe' in error_msg.lower():
+            raise RuntimeError(
+                "FFmpeg ch\u01b0a \u0111\u01b0\u1ee3c c\u00e0i \u0111\u1eb7t!\n"
+                "C\u1ea7n FFmpeg \u0111\u1ec3 convert audio ho\u1eb7c gh\u00e9p video.\n"
+                "T\u1ea3i: https://ffmpeg.org/download.html"
+            )
+        raise RuntimeError(f"L\u1ed7i t\u1ea3i: {e}")
 
 
 def download_thumbnail(thumbnail_url, output_path, size=(500, 500)):

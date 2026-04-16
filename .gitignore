@@ -23,6 +23,9 @@ desktop.ini
 *.bak
 *.log
 
+# Video downloads (local only, not for PWA)
+downloads/
+
 # Do not ignore audio and cover files (they need to be in repo)
 # !assets/audio/
 # !assets/covers/

@@ -10,6 +10,7 @@ import playlistManager from './playlist.js';
 import mediaSession from './media-session.js';
 import ui from './ui.js';
 import storageManager from './storage.js';
+import lyricsManager from './lyrics.js';
 
 class VinylNoirApp {
     constructor() {
@@ -36,6 +37,9 @@ class VinylNoirApp {
 
             // 4. Init Media Session
             mediaSession.init();
+
+            // 5. Init Lyrics
+            lyricsManager.init();
 
             // 5. Restore last state
             this._restoreState();

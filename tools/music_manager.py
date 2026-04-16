@@ -31,7 +31,8 @@ except ImportError:
 
 from downloader import (
     check_dependencies, get_video_info, download_audio,
-    download_thumbnail, is_valid_youtube_url, sanitize_filename
+    download_thumbnail, is_valid_youtube_url, sanitize_filename,
+    build_format_choices, download_with_format, fetch_lyrics
 )
 from github_uploader import (
     check_git_installed, check_repo_status, update_playlist_json,
@@ -92,11 +93,12 @@ class MusicManagerApp(ctk.CTk):
         self.current_info = None
         self.is_downloading = False
         self.download_queue = []
+        self.format_choices = []
 
         # Window setup
         self.title("🎵 Vinyl Noir — Music Manager")
-        self.geometry("820x680")
-        self.minsize(700, 580)
+        self.geometry("820x760")
+        self.minsize(700, 640)
 
         # Theme
         ctk.set_appearance_mode("dark")
@@ -197,6 +199,38 @@ class MusicManagerApp(ctk.CTk):
                 anchor="w"
             )
             self.info_labels[key].pack(side="left", fill="x", expand=True)
+
+        # --- Format selector ---
+        format_section = ctk.CTkFrame(preview_inner, fg_color="transparent")
+        format_section.pack(fill="x", pady=(8, 4))
+
+        ctk.CTkLabel(
+            format_section, text="📦 Chọn định dạng tải:",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=self.GOLD
+        ).pack(anchor="w", pady=(0, 4))
+
+        self.format_var = ctk.StringVar(value="")
+        self.format_menu = ctk.CTkOptionMenu(
+            format_section,
+            variable=self.format_var,
+            values=["— Nhấn 🔍 Tìm để xem format —"],
+            height=36,
+            fg_color="#1e1e3a",
+            button_color=self.GOLD_DIM,
+            button_hover_color=self.GOLD,
+            dropdown_fg_color="#1a1a2e",
+            dropdown_hover_color="#2a2a4e",
+            font=ctk.CTkFont(size=12),
+            state="disabled",
+        )
+        self.format_menu.pack(fill="x")
+
+        self.format_detail = ctk.CTkLabel(
+            format_section, text="",
+            font=ctk.CTkFont(size=11), text_color="#6a6a8a"
+        )
+        self.format_detail.pack(anchor="w", pady=(2, 0))
 
         # Nút hành động
         btn_row = ctk.CTkFrame(preview_inner, fg_color="transparent")
@@ -332,6 +366,16 @@ class MusicManagerApp(ctk.CTk):
             try:
                 info = get_video_info(url)
                 self.current_info = info
+                # Lấy danh sách format từ raw data (không gọi YouTube lần 2)
+                if info and info.get('_raw_formats'):
+                    try:
+                        self.format_choices = build_format_choices(
+                            info['_raw_formats'], info.get('duration', 0)
+                        )
+                    except Exception:
+                        self.format_choices = build_format_choices([], info.get('duration', 0))
+                else:
+                    self.format_choices = build_format_choices([], 0)
                 self.after(0, lambda: self._display_info(info))
             except Exception as e:
                 self.after(0, lambda: self._log(f"❌ Lỗi: {e}"))
@@ -354,6 +398,29 @@ class MusicManagerApp(ctk.CTk):
 
         self.listen_btn.configure(state="normal")
         self.download_btn.configure(state="normal")
+
+        # Populate format dropdown
+        if self.format_choices:
+            labels = [c['label'] for c in self.format_choices]
+            self.format_menu.configure(values=labels, state="normal")
+            # Mặc định chọn MP3 192kbps
+            default_label = next(
+                (c['label'] for c in self.format_choices if c['key'] == 'mp3_192'),
+                labels[0]
+            )
+            self.format_var.set(default_label)
+            self.format_menu.set(default_label)
+            audio_n = sum(1 for c in self.format_choices if c['category'].startswith('audio'))
+            video_n = sum(1 for c in self.format_choices if c['category'] == 'video')
+            self.format_detail.configure(
+                text=f"📊 {audio_n} định dạng audio + {video_n} định dạng video có sẵn"
+            )
+        else:
+            self.format_menu.configure(
+                values=["🎵 MP3 192kbps — mặc định"], state="normal"
+            )
+            self.format_var.set("🎵 MP3 192kbps — mặc định")
+            self.format_detail.configure(text="")
 
         self._log(f"✅ Tìm thấy: {info['title']} — {info['artist']} ({info['duration_str']})")
 
@@ -397,33 +464,67 @@ class MusicManagerApp(ctk.CTk):
         info = self.current_info
         config = self.config
         repo_path = config['repo_path']
-
         url = self.url_entry.get().strip()
-        audio_dir = os.path.join(repo_path, config['audio_dir'])
+
+        # Tìm format đã chọn từ dropdown
+        selected_label = self.format_var.get()
+        format_choice = None
+        for c in self.format_choices:
+            if c['label'] == selected_label:
+                format_choice = c
+                break
+
+        if not format_choice:
+            # Fallback MP3 192kbps nếu không tìm thấy
+            format_choice = {
+                'key': 'mp3_192', 'category': 'audio',
+                'ydl_format': 'bestaudio/best',
+                'postprocessors': [{'key': 'FFmpegExtractAudio',
+                                    'preferredcodec': 'mp3', 'preferredquality': '192'}],
+                'output_ext': 'mp3',
+            }
+
+        is_video = format_choice.get('category') == 'video'
         covers_dir = os.path.join(repo_path, config['covers_dir'])
 
-        # Step 1: Tải audio
-        self.after(0, lambda: self._log("⬇️ Bước 1/4: Đang tải audio..."))
-        self.after(0, lambda: self.progress_label.configure(text="Đang tải audio..."))
+        if is_video:
+            output_dir = os.path.join(repo_path, 'downloads')
+        else:
+            output_dir = os.path.join(repo_path, config['audio_dir'])
+
+        # Step 1: Tải media với format đã chọn
+        fmt_label = format_choice.get('output_ext', '?').upper()
+        self.after(0, lambda: self._log(f"⬇️ Bước 1/4: Đang tải {fmt_label}..."))
+        self.after(0, lambda: self.progress_label.configure(text=f"Đang tải {fmt_label}..."))
 
         def on_progress(percent, status):
             self.after(0, lambda p=percent: self.progress_bar.set(p / 100 * 0.5))
             self.after(0, lambda s=status: self.progress_label.configure(text=s))
 
-        result = download_audio(
-            url, audio_dir,
-            quality=config['audio_quality'],
+        result = download_with_format(
+            url, format_choice, output_dir,
+            info=info,
             ffmpeg_path=config.get('ffmpeg_path') or None,
             progress_callback=on_progress
         )
 
         if not result:
-            self.after(0, lambda: self._log("❌ Tải audio thất bại!"))
+            self.after(0, lambda: self._log("❌ Tải thất bại!"))
             return
 
-        mp3_filename = result['filename']
-        mp3_relative = f"{config['audio_dir']}/{mp3_filename}"
-        self.after(0, lambda: self._log(f"✅ Đã tải: {mp3_filename}"))
+        out_filename = result['filename']
+        self.after(0, lambda: self._log(f"✅ Đã tải: {out_filename}"))
+
+        # Video: chỉ lưu local, không thêm vào playlist PWA
+        if is_video:
+            self.after(0, lambda: self._log(f"📁 Video lưu tại: {result['filepath']}"))
+            self.after(0, lambda: self._log("ℹ️ Video không thêm vào playlist (PWA chỉ phát audio)"))
+            self.after(0, lambda: self.progress_bar.set(1.0))
+            self.after(0, lambda: self.progress_label.configure(text="✅ Video đã lưu!"))
+            return
+
+        # === Audio pipeline: thumbnail → playlist → push ===
+        audio_relative = f"{config['audio_dir']}/{out_filename}"
 
         # Step 2: Tải thumbnail
         self.after(0, lambda: self._log("🖼 Bước 2/4: Đang tải ảnh bìa..."))
@@ -440,6 +541,25 @@ class MusicManagerApp(ctk.CTk):
             cover_relative = "assets/covers/default-cover.jpg"
             self.after(0, lambda: self._log("⚠️ Dùng ảnh bìa mặc định"))
 
+        # Step 2.5: Tìm lời bài hát
+        self.after(0, lambda: self._log("🎤 Đang tìm lời bài hát..."))
+        self.after(0, lambda: self.progress_bar.set(0.62))
+
+        try:
+            lyrics_text = fetch_lyrics(
+                info['title'], info['artist'], info.get('duration', 0)
+            )
+            if lyrics_text:
+                is_synced = '[' in lyrics_text and ']:' not in lyrics_text
+                ltype = 'synced ⏱' if is_synced else 'plain text'
+                self.after(0, lambda t=ltype: self._log(f"✅ Tìm thấy lời bài hát ({t})"))
+            else:
+                lyrics_text = ''
+                self.after(0, lambda: self._log("ℹ️ Không tìm thấy lời bài hát"))
+        except Exception:
+            lyrics_text = ''
+            self.after(0, lambda: self._log("⚠️ Lỗi khi tìm lời bài hát"))
+
         # Step 3: Cập nhật playlist.json
         self.after(0, lambda: self._log("📝 Bước 3/4: Cập nhật playlist.json..."))
         self.after(0, lambda: self.progress_bar.set(0.7))
@@ -451,9 +571,9 @@ class MusicManagerApp(ctk.CTk):
             'artist': info['artist'],
             'album': info.get('album', ''),
             'cover': cover_relative,
-            'audioUrl': mp3_relative,
+            'audioUrl': audio_relative,
             'duration': info.get('duration', 0),
-            'lyrics': '',
+            'lyrics': lyrics_text,
             'favorite': False
         }
 
@@ -467,7 +587,7 @@ class MusicManagerApp(ctk.CTk):
             self.after(0, lambda: self.progress_label.configure(text="Đang push lên GitHub..."))
 
             files_to_push = [
-                mp3_relative,
+                audio_relative,
                 config['playlist_file'],
             ]
             if cover_result:

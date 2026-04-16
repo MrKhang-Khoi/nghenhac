@@ -56,6 +56,22 @@
                     <div class="vinyl-center"></div>
                 </div>
 
+                <!-- Lyrics Panel (overlays vinyl when active) -->
+                <div id="lyrics-panel" class="lyrics-panel">
+                    <div id="lyrics-container" class="lyrics-container">
+                        <div class="lyrics-empty">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m11 7.601-5.994 8.19a1 1 0 0 0 .1 1.298l.817.818a1 1 0 0 0 1.314.087L15.09 12"/>
+                                <path d="M16.5 21.174C15.5 20.5 14.372 20 13 20c-2.058 0-3.928.755-4.782 1.9"/>
+                                <path d="m6.5 15.5 3 3"/>
+                                <path d="M21 5c-1 2-3 4-6 4"/>
+                                <path d="M22 2 11 13"/>
+                            </svg>
+                            <span>Chưa có lời bài hát</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Track Info -->
                 <div class="track-info">
                     <h1 id="track-title" class="track-title">Vinyl Noir Player</h1>
@@ -92,6 +108,15 @@
                                type="range" min="0" max="1" step="0.01" value="0.8"
                                aria-label="Âm lượng">
                     </div>
+                    <button id="btn-lyrics" class="ctrl-btn lyrics-toggle" title="Lời bài hát" aria-label="Lời bài hát">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m11 7.601-5.994 8.19a1 1 0 0 0 .1 1.298l.817.818a1 1 0 0 0 1.314.087L15.09 12"/>
+                            <path d="M16.5 21.174C15.5 20.5 14.372 20 13 20c-2.058 0-3.928.755-4.782 1.9"/>
+                            <path d="m6.5 15.5 3 3"/>
+                            <path d="M21 5c-1 2-3 4-6 4"/>
+                            <path d="M22 2 11 13"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
