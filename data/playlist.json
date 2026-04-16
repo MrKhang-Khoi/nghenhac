@@ -163,5 +163,16 @@
     "duration": 293,
     "lyrics": "",
     "favorite": false
+  },
+  {
+    "id": "dung_de_toi_biet_anh_doi_gian_-_tina_ngoc_lan_sang_tac_lam_h",
+    "title": "Đừng Để Tôi Biết Anh Dối Gian - Tina Ngọc Lan | Sáng tác: Lâm Hùng (Official 4K MV)",
+    "artist": "Tina Ngọc Lan Official",
+    "album": "",
+    "cover": "assets/covers/Dung_De_Toi_Biet_Anh_Doi_Gian_-_Tina_Ngoc_Lan_Sang_tac_Lam_H.jpg",
+    "audioUrl": "assets/audio/Dung_De_Toi_Biet_Anh_Doi_Gian_-_Tina_Ngoc_Lan_Sang_tac_Lam_H.mp3",
+    "duration": 244,
+    "lyrics": "",
+    "favorite": false
   }
 ]
