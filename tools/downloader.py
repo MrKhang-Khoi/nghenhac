@@ -259,67 +259,125 @@ def fetch_lyrics(title, artist, duration=0):
     """
     Lấy lyrics từ LRCLIB API (miễn phí, không cần API key).
     
-    Thử tìm synced lyrics (LRC format) trước, fallback sang plain text.
+    Tự động clean YouTube title để tìm chính xác hơn.
+    Thử nhiều chiến lược tìm kiếm.
     
     Args:
-        title: Tên bài hát
-        artist: Tên nghệ sĩ
+        title: Tên bài hát (có thể là YouTube title dài)
+        artist: Tên nghệ sĩ (có thể là channel name)
         duration: Thời lượng (giây), để match chính xác hơn
     
     Returns:
         str: Lyrics text (LRC format nếu có, plain text nếu không) hoặc ''
     """
-    try:
-        query = urllib.parse.urlencode({
-            'q': f'{title} {artist}'
-        })
-        url = f'https://lrclib.net/api/search?{query}'
+    import re as _re
+
+    def _clean_title(raw):
+        """Clean YouTube title → (song_name, extracted_artist)"""
+        t = raw
+        noise = [
+            r'\(Official\s*(MV|Music\s*Video|Video|Audio|Lyric\s*Video)\)',
+            r'\[Official\s*(MV|Music\s*Video|Video|Audio)\]',
+            r'\(LIVE\)', r'\(Live\s*(?:at|version|concert|in).*?\)',
+            r'\bOfficial\s*(MV|Music\s*Video|Video)\b',
+            r'\bLyric\s*Video\b', r'\bMV\b',
+            r'\bvideo\s*by\s*\w+', r'\bLIVE\s*VERSION\s*AT\b.*$',
+            r'\bLive\s*Concert\b.*$', r'\bSáng\s*tác:?\s*.*$',
+            r'\|\|.*$', r'Giọng\s*Ca.*$', r'Bản\s*Tình\s*Ca.*$',
+            r'Nhạc\s*Vàn?g?.*$', r'\d{4}$', r'4K\b',
+        ]
+        for p in noise:
+            t = _re.sub(p, '', t, flags=_re.IGNORECASE)
         
-        req = urllib.request.Request(url, headers={
-            'User-Agent': 'VinylNoir/1.0 (https://github.com)',
-        })
-        
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-        
-        if not data or not isinstance(data, list):
-            return ''
-        
-        # Tìm kết quả phù hợp nhất
-        best = None
-        
-        # Vòng 1: Tìm bài có synced lyrics + duration gần nhất
-        for item in data:
-            if item.get('syncedLyrics'):
-                if duration > 0:
-                    item_dur = item.get('duration', 0)
-                    if item_dur and abs(item_dur - duration) < 15:
-                        best = item
-                        break
-                else:
-                    best = item
+        ext_artist = ''
+        for sep in [' - ', ' – ', ' — ']:
+            if sep in t:
+                parts = t.split(sep, 1)
+                t = parts[0].strip()
+                ext_artist = parts[1].strip()
+                break
+        if not ext_artist:
+            for sep in [' | ', ' │ ']:
+                if sep in t:
+                    parts = t.split(sep, 1)
+                    t = parts[0].strip()
+                    ext_artist = parts[1].strip()
                     break
         
-        # Vòng 2: Bài có synced lyrics bất kỳ
-        if not best:
+        if ext_artist:
+            ext_artist = _re.sub(
+                r'\s*(Official|Tube|Channel|Music|Entertainment)\s*$',
+                '', ext_artist, flags=_re.IGNORECASE
+            ).strip()
+
+        t = _re.sub(r'\s*[\(\[].*?[\)\]]', '', t)
+        t = _re.sub(r'\s{2,}', ' ', t).strip()
+        return t, ext_artist
+
+    def _search_lrclib(q_title, q_artist, dur=0):
+        """Gọi LRCLIB API, trả về lyrics string hoặc ''"""
+        try:
+            query = urllib.parse.urlencode({'q': f'{q_title} {q_artist}'.strip()})
+            url = f'https://lrclib.net/api/search?{query}'
+            req = urllib.request.Request(url, headers={
+                'User-Agent': 'VinylNoir/1.0 (https://github.com)',
+            })
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+            
+            if not data or not isinstance(data, list):
+                return ''
+            
+            best = None
             for item in data:
                 if item.get('syncedLyrics'):
-                    best = item
-                    break
-        
-        # Vòng 3: Fallback bài có plain lyrics
-        if not best:
-            for item in data:
-                if item.get('plainLyrics'):
-                    best = item
-                    break
-        
-        if not best:
+                    if dur > 0:
+                        item_dur = item.get('duration', 0)
+                        if item_dur and abs(item_dur - dur) < 15:
+                            best = item
+                            break
+                    else:
+                        best = item
+                        break
+            if not best:
+                for item in data:
+                    if item.get('syncedLyrics'):
+                        best = item
+                        break
+            if not best:
+                for item in data:
+                    if item.get('plainLyrics'):
+                        best = item
+                        break
+            
+            if not best:
+                return ''
+            return best.get('syncedLyrics') or best.get('plainLyrics') or ''
+        except Exception:
             return ''
-        
-        # Ưu tiên synced lyrics (LRC format — có timestamp)
-        return best.get('syncedLyrics') or best.get('plainLyrics') or ''
-        
+
+    try:
+        clean_name, extracted_artist = _clean_title(title)
+        search_artist = extracted_artist or artist
+
+        # Thử 1: Title đã clean + artist
+        result = _search_lrclib(clean_name, search_artist, duration)
+        if result:
+            return result
+
+        # Thử 2: Chỉ title (bỏ artist)
+        if search_artist:
+            result = _search_lrclib(clean_name, '', duration)
+            if result:
+                return result
+
+        # Thử 3: Title + channel name (nếu khác extracted_artist)
+        if extracted_artist and artist != extracted_artist:
+            result = _search_lrclib(clean_name, artist, duration)
+            if result:
+                return result
+
+        return ''
     except Exception as e:
         print(f"[Downloader] Lỗi lấy lyrics: {e}")
         return ''
